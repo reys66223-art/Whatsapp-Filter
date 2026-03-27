@@ -83,8 +83,13 @@ class WhatsAppValidator:
 
     def has_session(self) -> bool:
         """Cek apakah sudah ada sesi login tersimpan."""
-        db_file = f"{self.session_name}.db"
-        return os.path.exists(db_file) and os.path.getsize(db_file) > 0
+        # neonize terkadang membuat file tanpa .db atau dengan .db
+        # Kita cek yang paling mungkin ditemukan oleh neonize
+        possible_files = [self.session_name, f"{self.session_name}.db"]
+        for db_file in possible_files:
+            if os.path.exists(db_file) and os.path.getsize(db_file) > 100: # SQLite minimal ~100 bytes
+                return True
+        return False
 
     def authenticate(self, phone_number: str) -> str:
         """

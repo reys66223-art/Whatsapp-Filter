@@ -129,7 +129,9 @@ def step_auth(validator: WhatsAppValidator):
         console.print("[red]❌ Gagal terhubung! Coba hapus file sesi dan pairing ulang.[/red]")
         if Confirm.ask("[yellow]Hapus sesi dan coba lagi?[/yellow]"):
             try:
-                os.remove(f"{validator.session_name}.db")
+                for db_file in [validator.session_name, f"{validator.session_name}.db"]:
+                    if os.path.exists(db_file):
+                        os.remove(db_file)
                 console.print("[green]✓ Sesi dihapus. Silakan jalankan ulang script.[/green]")
             except Exception:
                 pass
