@@ -38,11 +38,11 @@ from rich.table import Table
 
 console = Console()
 
-# Batch size untuk pengecekan nomor
-BATCH_SIZE = 20
-# Delay range antar batch (detik)
-DELAY_MIN = 0.2
-DELAY_MAX = 0.5
+# Batch size diperkecil untuk stabilitas library neonize
+BATCH_SIZE = 10
+# Delay range antar batch ditingkatkan sedikit agar tidak kena rate limit
+DELAY_MIN = 0.5
+DELAY_MAX = 1.0
 
 
 class WhatsAppValidator:
@@ -172,13 +172,21 @@ class WhatsAppValidator:
             console=console,
         ) as progress:
             task = progress.add_task("Memfilter nomor", total=total)
+            
+            # Stabilization (Penting untuk neonize 0.3.15+)
+            progress.console.print("\n[cyan]⏳ Menunggu sinkronisasi background (5 detik)...[/cyan]")
+            time.sleep(5)
 
             # Proses per batch
             for i in range(0, total, BATCH_SIZE):
                 batch = numbers[i : i + BATCH_SIZE]
 
                 try:
+                    # Mencoba batch check
                     results = self.client.is_on_whatsapp(*batch)
+                    
+                    if results is None:
+                        raise Exception("Function returned nothing")
 
                     for result in results:
                         if result.IsIn:
@@ -189,9 +197,22 @@ class WhatsAppValidator:
                             invalid.append(result.Query)
 
                 except Exception as e:
-                    console.print(f"\n[red]  ⚠ Error pada batch {i // BATCH_SIZE + 1}: {e}[/red]")
-                    # Tambahkan semua nomor di batch ini ke invalid
-                    invalid.extend(batch)
+                    # Fallback ke mode satu-satu jika batch gagal (fitur Auto-Repair)
+                    progress.console.print(f"\n[yellow]  ⚠ Batch {i // BATCH_SIZE + 1} gagal ({e}). Menggunakan mode satu-satu...[/yellow]")
+                    time.sleep(1) 
+                    for num in batch:
+                        try:
+                            # Cek satu per satu nomor dalam batch yang gagal tersebut
+                            res_one = self.client.is_on_whatsapp(num)
+                            if res_one and res_one[0].IsIn:
+                                active.append(res_one[0].JID.User if res_one[0].JID and res_one[0].JID.User else res_one[0].Query)
+                            elif res_one:
+                                invalid.append(res_one[0].Query or num)
+                            else:
+                                invalid.append(num)
+                            time.sleep(0.1) # Micro-delay antar nomor agar tidak membebani server
+                        except:
+                            invalid.append(num)
 
                 progress.update(task, advance=len(batch))
 
