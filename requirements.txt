@@ -1,0 +1,5 @@
+neonize
+pandas
+openpyxl
+rich
+tqdm
