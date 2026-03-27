@@ -186,7 +186,7 @@ def step_input() -> list[str]:
 
     if len(raw_numbers) != len(formatted):
         diff = len(raw_numbers) - len(formatted)
-        console.print(f"[dim]   ({diff} nomor dihapus: duplikat/invalid/terlalu pendek)[/dim]")
+        console.print(f"[dim]   ({diff} nomor dihapus: hanya membuang duplikat)[/dim]")
 
     console.print()
     return formatted
@@ -239,11 +239,20 @@ def main():
         # Step 1: Auth
         step_auth(validator)
 
-        # Step 2: Input
-        numbers = step_input()
+        while True:
+            # Step 2: Input
+            numbers = step_input()
 
-        # Step 3: Validate & Save
-        step_validate(validator, numbers)
+            # Step 3: Validate & Save
+            step_validate(validator, numbers)
+
+            console.print(Rule(style="dim"))
+            if not Confirm.ask(
+                "\n[bold yellow]Ingin memvalidasi nomor lain?[/bold yellow]",
+                default=True,
+            ):
+                console.print("\n[yellow]👋 Terima kasih telah menggunakan Ghost Validator. Sampai jumpa![/yellow]")
+                break
 
     except KeyboardInterrupt:
         console.print("\n\n[yellow]👋 Dibatalkan oleh user. Sampai jumpa![/yellow]")

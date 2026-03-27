@@ -39,9 +39,9 @@ def normalize_prefix(number: str) -> str:
 def is_valid_length(number: str) -> bool:
     """
     Validasi panjang nomor setelah dibersihkan.
-    Hanya memproses nomor dengan panjang 9-15 digit.
+    Sangat permisif untuk mendukung kebutuhan user (minimal 3 digit).
     """
-    return 9 <= len(number) <= 15
+    return len(number) >= 3
 
 
 def format_numbers(raw_list: list[str]) -> list[str]:
@@ -68,11 +68,15 @@ def format_numbers(raw_list: list[str]) -> list[str]:
             
         normalized = normalize_prefix(cleaned)
         
-        if not is_valid_length(normalized):
+        # Cek duplikat adalah prioritas utama sesuai permintaan user
+        if normalized in seen:
             continue
             
-        if normalized not in seen:
-            seen.add(normalized)
-            result.append(normalized)
+        # Tetap minimal 3 digit agar tidak memproses sampah/kosong
+        if len(normalized) < 3:
+            continue
+            
+        seen.add(normalized)
+        result.append(normalized)
     
     return result
